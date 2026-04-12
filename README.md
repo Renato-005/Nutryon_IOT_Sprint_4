@@ -55,48 +55,6 @@ A IA resolve isso aprendendo os padrões do próprio usuário: se Carlos sempre 
 
 ---
 
-## 🏗️ Arquitetura
-
-```
-Usuário (Oracle APEX)
-        │
-        ▼
-Oracle APEX — Interactive Report (3 páginas)
-        │
-        ▼
-┌─────────────────────────────────────────┐
-│            Oracle Database              │
-│                                         │
-│  VW_HISTORICO   VW_DASHBOARD   VW_SUGESTOES_IA  │
-│        │              │              │  │
-│        └──────────────┴──────────────┘  │
-│                       │                 │
-│          OML Apriori (MDL_NUTRYON_ASSOC)│
-│                       │                 │
-│   USUARIO   REFEICAO+ITEM   INGREDIENTE │
-└─────────────────────────────────────────┘
-        ▲
-Oracle Scheduler (re-treino semanal)
-```
-
-O diagrama completo está disponível em `/docs/Diagrama_AI.png`.
-
----
-
-## 📄 Estrutura do Repositório
-
-```
-Nutryon-AI/
-├── README.md
-├── sql/
-│   ├── nutryon_mvp_completo.sql     # MVP completo para Oracle APEX
-│   └── nutryon_oml_completo.sql     # OML completo com DBMS_DATA_MINING
-└── docs/
-    └── Diagrama_AI.png              # Diagrama de arquitetura
-```
-
----
-
 ## 🚀 Como Executar
 
 ### Pré-requisitos
