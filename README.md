@@ -319,17 +319,3 @@ Video atualizado com a demonstracao funcional da versao integrada ao Oracle APEX
 | `docs/Diagrama AI.png` | Diagrama historico da Sprint 3; a arquitetura atual esta neste README |
 
 ---
-
-## Status da entrega
-
-| Item | Status |
-|---|---|
-| Modelo de IA definido | Pronto |
-| Fallback SQL funcional para sugestoes | Pronto |
-| Servico PL/SQL consumivel pelo APEX | Pronto |
-| App APEX com dashboard | Pronto |
-| Montagem de refeicao com varios alimentos | Pronto |
-| Remocao de alimento da refeicao | Pronto |
-| Catalogo expandido de alimentos | Pronto |
-| Documentacao tecnica | Pronto |
-| Video pitch | Pronto |
