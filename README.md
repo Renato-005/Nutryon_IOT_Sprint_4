@@ -167,6 +167,16 @@ O arquivo `apex/f161645_nutryon_ia.sql` e o export completo da aplicacao APEX. E
 
 > O SQL Commands do APEX pode exigir a execucao de um comando ou bloco por vez. Caso algum `DROP TABLE` informe que a tabela nao existe, o erro pode ser ignorado na primeira execucao.
 
+### Acesso ao app publicado
+
+O aplicativo funcional pode ser testado no ambiente Oracle APEX:
+
+- Link: [Nutryon IA - Oracle APEX](https://oracleapex.com/ords/r/fiap/nutryon-ia/login)
+- Login de demonstracao: `PROFESSOR_TESTE`
+- Senha de demonstracao: `IOTtds2026#`
+
+> Atencao: este repositorio e publico. Para evitar expor uma senha ativa no GitHub, recomenda-se preencher o login no README e fornecer a senha ao avaliador no arquivo de entrega ou por um canal privado.
+
 ### Testes rapidos apos executar os scripts
 
 ```sql
