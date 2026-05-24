@@ -1,10 +1,12 @@
-# Nutryon AI — Inteligência Artificial com Oracle Machine Learning
+# Nutryon AI - Inteligencia Artificial integrada ao Oracle APEX
 
-Componente de Inteligência Artificial do projeto **Nutryon**, desenvolvido para a disciplina **Disruptive Architectures: IoT, IoB & Generative IA** da FIAP.
+Componente de Inteligencia Artificial do projeto **Nutryon**, desenvolvido para a disciplina **Disruptive Architectures: IoT, IoB & Generative IA** da FIAP.
+
+Este repositorio evolui a entrega anterior, que era baseada principalmente em scripts SQL e relatorios APEX, para uma versao mais funcional: o usuario consegue montar refeicoes com multiplos alimentos, acompanhar o dashboard de calorias/macronutrientes e consultar sugestoes de alimentos por tipo de refeicao usando uma camada de IA baseada no historico alimentar.
 
 ---
 
-## 👥 Integrantes
+## Integrantes
 
 | Nome | RM |
 |---|---|
@@ -15,136 +17,309 @@ Componente de Inteligência Artificial do projeto **Nutryon**, desenvolvido para
 
 ---
 
-## 📌 Sobre o projeto
+## Sobre o projeto
 
-O Nutryon é um aplicativo de nutrição e controle de macronutrientes que calcula automaticamente as necessidades calóricas do usuário com base no seu perfil (peso, altura, idade, objetivo e nível de atividade) e permite registrar refeições diárias acompanhando o consumo de proteínas, carboidratos e gorduras em tempo real.
+O **Nutryon** e um aplicativo de nutricao e controle de macronutrientes. A proposta e permitir que o usuario registre refeicoes diarias, acompanhe calorias, proteinas, carboidratos e gorduras, e receba sugestoes inteligentes de alimentos com base nos padroes do historico de refeicoes.
 
-Este repositório contém o componente de IA do projeto, que utiliza **Oracle Machine Learning (OML)** com o algoritmo **Apriori (Association Rules)** para analisar o histórico de refeições e sugerir automaticamente os ingredientes mais prováveis para cada nova refeição.
+Nesta entrega, o foco esta em:
 
----
-
-## 🧠 Problema de IA Resolvido
-
-O principal ponto de abandono em aplicativos de nutrição é o registro manual e repetitivo das refeições. Mais de 80% dos usuários param de registrar em menos de duas semanas porque o processo de buscar cada ingrediente individualmente é trabalhoso.
-
-A IA resolve isso aprendendo os padrões do próprio usuário: se Carlos sempre registra Frango Grelhado e Feijão Cozido juntos no almoço, o modelo descobre essa regra e passa a sugerir automaticamente essa combinação quando um novo almoço é iniciado.
+- Implementar o modelo de IA definido na entrega anterior.
+- Criar um mecanismo consumivel pelo Oracle APEX.
+- Integrar a IA ao app APEX.
+- Permitir testes reais de cadastro de refeicao e atualizacao de dashboard.
+- Documentar tecnicamente o fluxo para entrega e video-pitch.
 
 ---
 
-## 🤖 Modelo Utilizado
+## Problema de IA resolvido
 
-**Algoritmo:** Apriori — Regras de Associação (Association Rules)  
-**Pacote:** `DBMS_DATA_MINING` — nativo no Oracle Database  
-**Modelo treinado:** `MDL_NUTRYON_ASSOC`
+Um dos maiores pontos de abandono em aplicativos de nutricao e o registro manual repetitivo das refeicoes. O usuario precisa procurar alimento por alimento, informar quantidades e repetir esse processo todos os dias.
 
-### Métricas configuradas
+A IA do Nutryon reduz essa friccao aprendendo padroes do historico. Exemplo: se usuarios registram frequentemente **arroz**, **feijao** e **frango** no almoco, o sistema passa a sugerir esses alimentos quando o tipo de refeicao selecionado for **ALMOCO**.
 
-| Métrica | Valor | Significado |
+---
+
+## Modelo utilizado
+
+| Item | Descricao |
+|---|---|
+| Abordagem principal | Regras de associacao por tipo de refeicao |
+| Algoritmo planejado | Apriori / Association Rules |
+| Pacote Oracle | `DBMS_DATA_MINING` |
+| Modelo OML | `MDL_NUTRYON_ASSOC` |
+| Fallback funcional | Views SQL analiticas consumidas pelo APEX |
+
+### Metricas configuradas para OML
+
+| Metrica | Valor | Significado |
+|---|---:|---|
+| Suporte minimo | 10% | Ingrediente aparece em pelo menos 10% das transacoes |
+| Confianca minima | 60% | Probabilidade minima da associacao |
+| Lift | > 1 | Associacao mais forte que coincidencia estatistica |
+
+> Observacao: o script OML esta preparado em `apex/nutryon_oml.sql`, mas depende de o schema Oracle liberar `DBMS_DATA_MINING`. Para garantir demonstracao funcional no APEX, tambem foi implementado um fallback SQL baseado em frequencia/confianca por tipo de refeicao.
+
+---
+
+## Arquitetura atual da solucao
+
+```mermaid
+flowchart LR
+    U["Usuario no Oracle APEX"] --> D["Dashboard"]
+    U --> M["Montar Refeicao"]
+    U --> S["Sugestoes IA"]
+    U --> H["Historico"]
+
+    M --> P["PKG_NUTRYON_MULTI_ITEM"]
+    P --> B[("Oracle Database")]
+    B --> T["USUARIO / REFEICAO / REFEICAO_ITEM / INGREDIENTE"]
+
+    T --> VD["VW_APP_DASHBOARD_DETALHADO"]
+    VD --> D
+
+    T --> VH["VW_HISTORICO_REFEICOES"]
+    VH --> H
+
+    T --> VI["VW_SUGESTOES_REFEICAO<br/>frequencia e confianca"]
+    VI --> VA["VW_APP_SUGESTOES_POR_TIPO"]
+    VA --> S
+
+    VI --> JS["PKG_NUTRYON_IA<br/>servico JSON"]
+    O["OML / Apriori opcional<br/>DBMS_DATA_MINING"] -. "quando habilitado no ambiente" .-> S
+
+    E["Export oficial APEX<br/>f161645_nutryon_ia.sql"] -. "reinstala a interface" .-> U
+```
+
+A aplicacao atualmente consome views SQL funcionais diretamente no APEX. O treinamento OML/Apriori permanece preparado para ambientes que disponibilizem `DBMS_DATA_MINING`, enquanto o servico JSON registra o mecanismo de integracao consumivel pelo APEX.
+
+---
+
+## Comparacao com a versao anterior
+
+| Ponto | Versao anterior no GitHub | Versao atual preparada para entrega |
 |---|---|---|
-| Suporte mínimo | 10% | Ingrediente aparece em pelo menos 10% das refeições |
-| Confiança mínima | 60% | 60% de chance de B aparecer dado A |
-| Lift | > 1 | Associação real, não coincidência estatística |
-
-### Por que Apriori?
-
-- Nativo no Oracle Database — zero dependência externa, zero custo adicional
-- Dados já existem no banco — tabelas REFEICAO, REFEICAO_ITEM e INGREDIENTE
-- Não precisa de dados rotulados — aprende diretamente do histórico
-- Integração com Oracle APEX por SQL puro — sem middleware
-- Regras interpretáveis — fácil de demonstrar e validar
+| Interface APEX | Tres paginas de Interactive Report | Fluxo de app com Dashboard, Montar Refeicao, Sugestoes IA e Historico |
+| Sugestoes IA | View simples de sugestoes por frequencia | Sugestoes filtradas por tipo de refeicao, cards no APEX e servico JSON |
+| Cadastro de refeicao | Nao havia fluxo de montagem completo no APEX | Usuario cria refeicao, adiciona multiplos alimentos, remove itens e finaliza |
+| Catalogo de alimentos | Poucos alimentos base | Catalogo expandido com cereais, frutas, proteinas, laticinios, vegetais e bebidas |
+| Integracao APEX | Principalmente views | Packages PL/SQL, LOVs, processos APEX, views de apoio e export do app |
+| Evidencias e documentacao | README focado no MVP | Guia funcional, diagrama atualizado no README e export oficial do app APEX |
 
 ---
 
-## 🚀 Como Executar
+## Estrutura do repositorio
 
-### Pré-requisitos
+```text
+Nutryon_IOT_Sprint_3/
+|-- README.md
+|-- sql/
+|   |-- nutryon_mvp.sql
+|   |-- sprint3.sql
+|   `-- dados_treinamento_ia.sql
+|-- apex/
+|   |-- nutryon_oml.sql
+|   |-- nutryon_ai_service.sql
+|   |-- nutryon_app_runtime.sql
+|   `-- f161645_nutryon_ia.sql
+`-- docs/
+    |-- Diagrama AI.png
+    `-- apex_app_funcional_setup.md
+```
 
-- Acesso ao Oracle APEX (ambiente FIAP ou apex.oracle.com)
-- Workspace com schema próprio
-- SQL Workshop disponível
-
-### Opção A — MVP completo (recomendado para demonstração)
-
-Execute o arquivo `sql/nutryon_mvp_completo.sql` **um comando por vez** no SQL Workshop → SQL Commands do Oracle APEX. O arquivo está dividido em blocos comentados e cria todas as tabelas, insere os dados de demonstração e cria as três views para o APEX.
-
-**Ordem de execução dos blocos:**
-1. DROP das tabelas existentes (se houver)
-2. CREATE TABLE de cada tabela
-3. INSERT dos dados base (tipos de refeição, categorias, ingredientes)
-4. INSERT dos usuários
-5. INSERT das refeições e itens
-6. COMMIT
-7. CREATE das views (VW_DASHBOARD_USUARIO, VW_HISTORICO_REFEICOES, VW_SUGESTOES_REFEICAO)
-
-> ⚠️ O SQL Commands do APEX aceita **apenas um comando por vez**. Não cole o arquivo inteiro — cole bloco por bloco conforme indicado nos comentários.
-
-### Opção B — OML com DBMS_DATA_MINING (modelo completo)
-
-Execute o arquivo `sql/nutryon_oml_completo.sql` após o banco estar populado. Este script cria a view transacional para o algoritmo Apriori, configura os parâmetros do modelo, realiza o treinamento e cria o job de re-treinamento semanal.
-
-> ⚠️ Requer que o pacote `DBMS_DATA_MINING` esteja disponível no schema. Disponível no Oracle Database 12c ou superior.
-
-### Criando o app no Oracle APEX
-
-Após executar o SQL:
-
-1. Acesse App Builder → Create → Use Create App Wizard
-2. Nome: `Nutryon`
-3. Adicione três páginas do tipo **Interactive Report:**
-   - `VW_HISTORICO_REFEICOES` → nome: Histórico de Refeições
-   - `VW_DASHBOARD_USUARIO` → nome: Dashboard
-   - `VW_SUGESTOES_REFEICAO` → nome: Sugestões IA
-4. Clique em **Create Application**
-5. Clique em **Run Application**
+O arquivo `docs/Diagrama AI.png` e um artefato historico da Sprint 3. O diagrama da arquitetura atual desta entrega esta documentado em Mermaid neste README.
 
 ---
 
-## 📊 Páginas do App
+## Scripts principais
 
-### Histórico de Refeições
-Exibe todas as refeições registradas com macros calculados automaticamente — kcal, proteína, carboidrato e gordura — com base nos valores nutricionais por 100g de cada ingrediente.
-
-### Dashboard
-Mostra o progresso calórico de cada usuário no dia atual comparado à meta personalizada, com percentual de atingimento e macros consumidos.
-
-### Sugestões IA
-Saída direta do modelo Apriori. Para cada tipo de refeição exibe os ingredientes mais frequentes no histórico com o percentual de confiança calculado pelo algoritmo e os valores nutricionais por 100g.
+| Arquivo | Funcao |
+|---|---|
+| `sql/nutryon_mvp.sql` | Cria tabelas, dados base e views iniciais para Dashboard, Historico e Sugestoes |
+| `sql/dados_treinamento_ia.sql` | Amplia o catalogo de alimentos e adiciona refeicoes historicas para melhorar as sugestoes da IA |
+| `apex/nutryon_oml.sql` | Prepara view transacional, parametros e blocos OML/Apriori |
+| `apex/nutryon_ai_service.sql` | Cria `PKG_NUTRYON_IA`, com sugestoes em JSON consumiveis pelo APEX |
+| `apex/nutryon_app_runtime.sql` | Cria LOVs, views consumidas pelas paginas e packages para inclusao/remocao de alimentos |
+| `apex/f161645_nutryon_ia.sql` | Export oficial do app Oracle APEX `Nutryon IA`, usado como evidencia e backup da interface |
+| `sql/sprint3.sql` | Script legado das sprints anteriores, mantido como historico do projeto |
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## Como executar no Oracle APEX
+
+### Pre-requisitos
+
+- Acesso ao Oracle APEX.
+- Workspace com schema proprio.
+- SQL Workshop disponivel.
+- Permissao para criar tabelas, views, packages e procedures.
+
+### Ordem recomendada de execucao
+
+No APEX, acesse **SQL Workshop > SQL Commands** e execute os scripts abaixo, preferencialmente bloco por bloco:
+
+1. `sql/nutryon_mvp.sql`
+2. `sql/dados_treinamento_ia.sql`
+3. `apex/nutryon_ai_service.sql`
+4. `apex/nutryon_app_runtime.sql`
+5. Opcional, se o ambiente liberar OML: `apex/nutryon_oml.sql`
+
+O arquivo `apex/f161645_nutryon_ia.sql` e o export completo da aplicacao APEX. Ele nao substitui os scripts acima; serve para reinstalar/importar a interface pronta ou comprovar a aplicacao desenvolvida.
+
+> O SQL Commands do APEX pode exigir a execucao de um comando ou bloco por vez. Caso algum `DROP TABLE` informe que a tabela nao existe, o erro pode ser ignorado na primeira execucao.
+
+### Testes rapidos apos executar os scripts
+
+```sql
+SELECT * FROM VW_APP_USUARIOS_LOV;
+SELECT * FROM VW_APP_TIPOS_REFEICAO_LOV;
+SELECT * FROM VW_APP_INGREDIENTES_LOV;
+SELECT * FROM VW_APP_SUGESTOES_POR_TIPO;
+```
+
+Teste do servico JSON:
+
+```sql
+SELECT PKG_NUTRYON_IA.SUGERIR_INGREDIENTES_JSON('ALMOCO', 5) AS SUGESTOES_ALMOCO
+FROM DUAL;
+```
+
+Teste dos itens da refeicao:
+
+```sql
+SELECT * FROM VW_APP_ITENS_REFEICAO_ATUAL;
+SELECT * FROM VW_APP_TOTAL_REFEICAO;
+```
+
+---
+
+## App APEX sugerido
+
+Crie um novo app no **App Builder** com o nome:
+
+```text
+Nutryon IA
+```
+
+### Paginas recomendadas
+
+| Pagina | Tipo | Objetivo |
+|---|---|---|
+| Dashboard | Blank + Cards | Exibir calorias e macros por usuario |
+| Montar Refeicao | Blank + Form + Report + Cards | Criar refeicao, adicionar varios alimentos, remover itens e finalizar |
+| Sugestoes IA | Blank + Cards | Sugerir alimentos por tipo de refeicao |
+| Historico | Interactive Report | Mostrar refeicoes registradas e macros calculados |
+
+O passo a passo detalhado esta em:
+
+```text
+docs/apex_app_funcional_setup.md
+```
+
+---
+
+## Fluxo funcional implementado
+
+1. Usuario acessa o **Dashboard** e escolhe o usuario ativo.
+2. Usuario acessa **Sugestoes IA** e seleciona o tipo de refeicao, como `CAFE DA MANHA`, `ALMOCO`, `LANCHE` ou `JANTAR`.
+3. O app mostra alimentos sugeridos com percentual de confianca.
+4. Usuario acessa **Montar Refeicao**.
+5. Usuario adiciona varios alimentos na mesma refeicao.
+6. O app calcula totais de calorias, proteinas, carboidratos e gorduras.
+7. Usuario pode remover alimentos adicionados.
+8. Ao finalizar, o **Dashboard** e o **Historico** refletem os dados atualizados.
+
+---
+
+## Views e packages importantes
+
+### Views
+
+| View | Uso |
+|---|---|
+| `VW_DASHBOARD_USUARIO` | Consumo diario por usuario |
+| `VW_HISTORICO_REFEICOES` | Historico detalhado de refeicoes |
+| `VW_SUGESTOES_REFEICAO` | Sugestoes por frequencia/confianca |
+| `VW_APP_SUGESTOES_POR_TIPO` | Sugestoes filtradas por tipo de refeicao |
+| `VW_APP_DASHBOARD_DETALHADO` | Dashboard com metas e percentuais |
+| `VW_APP_ITENS_REFEICAO_ATUAL` | Itens adicionados a uma refeicao |
+| `VW_APP_TOTAL_REFEICAO` | Total de macros da refeicao atual |
+
+### Packages
+
+| Package | Uso |
+|---|---|
+| `PKG_NUTRYON_IA` | Servico JSON de sugestoes para APEX |
+| `PKG_NUTRYON_APP` | Criacao da refeicao e inclusao de itens |
+| `PKG_NUTRYON_MULTI_ITEM` | Adicao/remocao de varios alimentos por refeicao |
+
+---
+
+## Evidencias para a entrega
+
+Durante a gravacao do video, recomenda-se mostrar:
+
+1. Execucao do Dashboard com usuario selecionado.
+2. Tela **Sugestoes IA** mudando os alimentos conforme o tipo de refeicao.
+3. Tela **Montar Refeicao** adicionando mais de um alimento.
+4. Remocao de alimento da refeicao.
+5. Total da refeicao sendo recalculado.
+6. Dashboard atualizado apos finalizar a refeicao.
+7. Historico com a refeicao registrada.
+
+---
+
+## Tecnologias utilizadas
 
 | Tecnologia | Uso |
 |---|---|
-| Oracle Database | Banco de dados relacional |
-| Oracle Machine Learning (OML) | Treinamento do modelo Apriori |
-| DBMS_DATA_MINING | Pacote nativo para machine learning |
-| Oracle APEX | Interface do usuário / Interactive Reports |
-| Oracle Scheduler | Re-treinamento automático semanal |
-| PL/SQL | Procedures, functions e triggers |
+| Oracle Database | Persistencia dos dados |
+| Oracle APEX | Interface do usuario |
+| PL/SQL | Packages, procedures, functions e triggers |
+| SQL Views | Dashboard, historico, sugestoes e calculos |
+| Oracle Machine Learning | Preparacao do modelo Apriori quando disponivel |
+| DBMS_DATA_MINING | Treinamento OML opcional |
 
 ---
 
-## 🔗 Repositórios Relacionados
+## Repositorios relacionados
 
-- **Frontend Angular:** https://github.com/VoyDcode/Nutryon-angular
-- **Backend Spring Boot:** https://github.com/VoyDcode/Nutryon
+- Frontend Angular: https://github.com/VoyDcode/Nutryon-angular
+- Backend Spring Boot: https://github.com/VoyDcode/Nutryon
+- Repositorio desta entrega: https://github.com/Renato-005/Nutryon_IOT_Sprint_3
 
 ---
 
-## 🎥 Vídeo Pitch
+## Video Pitch
 
+Link do video:
+
+```text
 https://www.youtube.com/watch?v=c6dg-uSwNLs
+```
+
+Caso seja gravado um novo video para esta versao, atualizar este link antes da entrega final.
 
 ---
 
-## 📝 Resultados Parciais
+## Documentacao complementar
 
-### Sprint 1 — Base do sistema
-Modelagem do banco de dados Oracle com tabelas de usuário, ingredientes, refeições e nutrientes. Implementação do cadastro e autenticação.
+| Arquivo | Conteudo |
+|---|---|
+| `docs/apex_app_funcional_setup.md` | Passo a passo para montar o app funcional no APEX |
+| `docs/Diagrama AI.png` | Diagrama historico da Sprint 3; a arquitetura atual esta neste README |
 
-### Sprint 2 — Cálculos nutricionais
-Implementação dos cálculos de TMB e TDEE. Functions PL/SQL para cálculo automático de calorias. Procedures de relatório e trigger de auditoria.
+---
 
-### Sprint 3 — IA e MVP no APEX
-Integração do Oracle Machine Learning com algoritmo Apriori. MVP funcional no Oracle APEX com três páginas Interactive Report. Views SQL para histórico, dashboard e sugestões baseadas em IA.
+## Status da entrega
+
+| Item | Status |
+|---|---|
+| Modelo de IA definido | Pronto |
+| Fallback SQL funcional para sugestoes | Pronto |
+| Servico PL/SQL consumivel pelo APEX | Pronto |
+| App APEX com dashboard | Pronto |
+| Montagem de refeicao com varios alimentos | Pronto |
+| Remocao de alimento da refeicao | Pronto |
+| Catalogo expandido de alimentos | Pronto |
+| Documentacao tecnica | Pronto |
+| Video pitch | Atualizar link se houver nova gravacao |
