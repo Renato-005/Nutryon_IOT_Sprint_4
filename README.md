@@ -304,10 +304,10 @@ Durante a gravacao do video, recomenda-se mostrar:
 Link do video:
 
 ```text
-https://www.youtube.com/watch?v=c6dg-uSwNLs
+https://youtu.be/YUCFk1kMyms
 ```
 
-Caso seja gravado um novo video para esta versao, atualizar este link antes da entrega final.
+Video atualizado com a demonstracao funcional da versao integrada ao Oracle APEX.
 
 ---
 
@@ -332,4 +332,4 @@ Caso seja gravado um novo video para esta versao, atualizar este link antes da e
 | Remocao de alimento da refeicao | Pronto |
 | Catalogo expandido de alimentos | Pronto |
 | Documentacao tecnica | Pronto |
-| Video pitch | Atualizar link se houver nova gravacao |
+| Video pitch | Pronto |
